@@ -357,10 +357,10 @@ paths:
                 projectId: '$response.body#/projectId'
                 id: '$response.body#/id'
                 title: '$response.body#/title'
-                description: '$response.body#/details/description'
-                assignee: '$response.body#/details/assignee'
+                description: '$response.body#/description'
+                assignee: '$response.body#/assignee'
                 points: '$response.body#/points'
-                status: '$response.body#/details/status'
+                status: '$response.body#/status'
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
@@ -431,10 +431,10 @@ paths:
                 projectId: '$response.body#/projectId'
                 id: '$response.body#/id'
                 title: '$response.body#/title'
-                description: '$response.body#/details/description'
-                assignee: '$response.body#/details/assignee'
+                description: '$response.body#/description'
+                assignee: '$response.body#/assignee'
                 points: '$response.body#/points'
-                status: '$response.body#/details/status'
+                status: '$response.body#/status'
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
@@ -645,10 +645,10 @@ paths:
                 projectId: '$response.body#/projectId'
                 id: '$response.body#/id'
                 title: '$response.body#/title'
-                description: '$response.body#/details/description'
-                assignee: '$response.body#/details/assignee'
+                description: '$response.body#/description'
+                assignee: '$response.body#/assignee'
                 points: '$response.body#/points'
-                status: '$response.body#/details/status'
+                status: '$response.body#/status'
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
@@ -713,10 +713,10 @@ paths:
                 projectId: '$response.body#/projectId'
                 id: '$response.body#/id'
                 title: '$response.body#/title'
-                description: '$response.body#/details/description'
-                assignee: '$response.body#/details/assignee'
+                description: '$response.body#/description'
+                assignee: '$response.body#/assignee'
                 points: '$response.body#/points'
-                status: '$response.body#/details/status'
+                status: '$response.body#/status'
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
@@ -765,10 +765,10 @@ paths:
                 projectId: '$response.body#/projectId'
                 id: '$response.body#/id'
                 title: '$response.body#/title'
-                description: '$response.body#/details/description'
-                assignee: '$response.body#/details/assignee'
+                description: '$response.body#/description'
+                assignee: '$response.body#/assignee'
                 points: '$response.body#/points'
-                status: '$response.body#/details/status'
+                status: '$response.body#/status'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
@@ -805,10 +805,10 @@ paths:
                 projectId: '$response.body#/projectId'
                 id: '$response.body#/id'
                 title: '$response.body#/title'
-                description: '$response.body#/details/description'
-                assignee: '$response.body#/details/assignee'
+                description: '$response.body#/description'
+                assignee: '$response.body#/assignee'
                 points: '$response.body#/points'
-                status: '$response.body#/details/status'
+                status: '$response.body#/status'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
@@ -1051,9 +1051,22 @@ components:
         projectId:
           type: string
           format: uuid
-        details:
-          $ref: '#/components/schemas/TaskDetails'
-      required: [ id, title, projectId, details ]
+        description:
+          type: string
+        assignee:
+          type: string
+          format: uuid
+        creationDate:
+          type: string
+          format: date
+        lastUpdate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        updatesCount:
+          type: integer
+      required: [ id, title, projectId, description, assignee, lastUpdate, status, updatesCount ]
     UserStoryCreationRequest:
       type: object
       properties:
@@ -1110,16 +1123,6 @@ components:
         projectId:
           type: string
           format: uuid
-        details:
-          $ref: '#/components/schemas/TaskDetails'
-      required: [ id, title, points, projectId, details ]
-    Task:
-      oneOf:
-        - $ref: '#/components/schemas/TechnicalStory'
-        - $ref: '#/components/schemas/UserStory'
-    TaskDetails:
-      type: object
-      properties:
         description:
           type: string
         assignee:
@@ -1135,6 +1138,11 @@ components:
           $ref: '#/components/schemas/TaskStatus'
         updatesCount:
           type: integer
+      required: [ id, title, points, projectId, description, assignee, lastUpdate, status, updatesCount ]
+    Task:
+      oneOf:
+        - $ref: '#/components/schemas/TechnicalStory'
+        - $ref: '#/components/schemas/UserStory'
     TaskStatus:
       type: string
       enum: [ 'todo', 'in progress', 'review', 'QA', 'done' ]
@@ -1213,10 +1221,6 @@ x-@context:
   taskId: 
     x-@id: vnd_jeera:taskId
     x-@type: '@id'
-  TaskDetails: vnd_jeera:TaskDetails
-  details: 
-    x-@id: vnd_jeera:Task/details
-    x-@type: TaskDetails
   assignee: vnd_jeera:assignee
   Task: vnd_jeera:Task
   TaskStatus: vnd_jeera:TaskStatus
@@ -1229,6 +1233,7 @@ x-@context:
   title: schema:name
   name: schema:name
   description: schema:description
+  creationDate: schema:dateCreated
   lastUpdatedOn: schema:dateModified
   lastUpdate: schema:dateModified
   updatesCount: vnd_jeera:updatesCount
