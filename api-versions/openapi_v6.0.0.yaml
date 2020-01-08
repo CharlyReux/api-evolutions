@@ -1,6 +1,6 @@
 openapi: "3.0.0"
 info:
-  version: 4.0.0
+  version: 6.0.0
   title: Jeera Project Manager
   license:
     name: MIT
@@ -381,6 +381,11 @@ paths:
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
         default:
           description: unexpected error
           content:
@@ -457,6 +462,31 @@ paths:
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/projectId'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /project/{projectId}/star:
+    post:
+      description: Reverse starred status of a project
+      operationId: starProject
+      x-@id: vnd_jeera:starProjectReverse
+      parameters: 
+        - $ref: '#/components/parameters/projectId'
+      tags:
+        - projects
+      responses:
+        '204':
+          description: Success
         default:
           description: unexpected error
           content:
@@ -492,7 +522,7 @@ paths:
         - bearerToken: []
   # to merge with unarchive
   /project/{projectId}/archive:
-    post:
+    put:
       description: Archive a project
       operationId: archiveProject
       x-@id: vnd_jeera:archiveProject
@@ -512,7 +542,7 @@ paths:
       security: 
         - bearerToken: []
   /project/{projectId}/unarchive:
-    post:
+    put:
       description: Unarchive a project
       operationId: unarchiveProject
       x-@id: vnd_jeera:unarchiveProject
@@ -673,6 +703,11 @@ paths:
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
         default:
           description: unexpected error
           content:
@@ -743,6 +778,11 @@ paths:
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
         default:
           description: unexpected error
           content:
@@ -835,6 +875,28 @@ paths:
                 $ref: "#/components/schemas/Error"
       security: 
         - bearerToken: []
+  /analytics/{resourceId}:
+    parameters:
+      - $ref: '#/components/parameters/resourceId'
+    get:
+      description: Get analytics on a resource
+      operationId: getAnalytics
+      x-@id: vnd_jeera:getAnalytics
+      tags:
+        - analytics
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analytics'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 
 components:
@@ -886,6 +948,16 @@ components:
           x-@relation: vnd_jeera:rel/delete
           parameters:
             projectId: '$response.body#/id'
+        star:
+          operationId: starProject
+          x-@relation: vnd_jeera:rel/starProject
+          parameters:
+            projectId: '$response.body#/id'
+        analytics:
+          operationId: getAnalytics
+          x-@relation: vnd_jeera:rel/analytics
+          parameters:
+            resourceId: '$response.body#/id'
   parameters:
     userId: 
       name: userId
@@ -895,6 +967,7 @@ components:
       required: true
       schema:
         type: string
+        format: url
     taskId:
       name: taskId
       in: path
@@ -903,6 +976,7 @@ components:
       required: true
       schema:
         type: string
+        format: url
     projectId:
       name: projectId
       in: path
@@ -911,6 +985,16 @@ components:
       required: true
       schema:
         type: string
+        format: url
+    resourceId:
+      name: resourceId
+      x-@id: vnd_jeera:appResourceId
+      in: path
+      description: Id of any resource hold by the server
+      required: true
+      schema:
+        type: string
+        format: url
   schemas:
     CreateUserRequest:
       type: object
@@ -943,6 +1027,12 @@ components:
           format: email
         role:
           $ref: '#/components/schemas/UserRole'
+        starredProjects:
+          type: array
+          items:
+            type: string
+            x-@id: vnd_jeera:projectId
+            x-@type: '@id'
     LoginRequest:
       type: object
       properties:
@@ -998,18 +1088,12 @@ components:
           type: boolean
         isArchived:
           type: boolean
-        lastUpdatedOn:
-          type: string
-          format: date
-        updatesCount:
-          type: integer
-          format: int32
         collaborators:
           type: array
           items:
             type: string
-            format: uuid
-      required: [ name, id, isPublic, isArchived, lastUpdatedOn, updatesCount, collaborators ]
+            x-@type: '@id'
+      required: [ name, id, isPublic, isArchived, collaborators ]
     TasksList:
       type: object
       properties:
@@ -1022,22 +1106,22 @@ components:
       properties:
         title:
           type: string
-          minLength: 3
-          maxLength: 140
+          minLength: 4
+          maxLength: 80
         description:
           type: string
           minLength: 0
-          maxLength: 2000
+          maxLength: 4000
         assignee:
           type: string
-          format: uuid
+          x-@type: '@id'
         status:
           $ref: '#/components/schemas/TaskStatusFreeToMove'
         tags:
           type: array
           items:
             type: string
-          maxItems: 6
+          maxItems: 10
         priority:
           $ref: '#/components/schemas/Priority'
       required: [ title, assignee ]
@@ -1046,22 +1130,22 @@ components:
       properties:
         title:
           type: string
-          minLength: 3
-          maxLength: 140
+          minLength: 4
+          maxLength: 80
         description:
           type: string
           minLength: 0
-          maxLength: 2000
+          maxLength: 4000
         assignee:
           type: string
-          format: uuid
+          x-@type: '@id'
         status:
           $ref: '#/components/schemas/TaskStatusFreeToMove'
         tags:
           type: array
           items:
             type: string
-          maxItems: 6
+          maxItems: 10
         priority:
           $ref: '#/components/schemas/Priority'
     TechnicalStory:
@@ -1076,18 +1160,12 @@ components:
           type: string
         parentProjectId:
           type: string
-          format: uuid
+          x-@type: '@id'
         description:
           type: string
         assignee:
           type: string
-          format: uuid
-        creationDate:
-          type: string
-          format: date
-        lastUpdate:
-          type: string
-          format: date
+          x-@type: '@id'
         status:
           $ref: '#/components/schemas/TaskStatus'
         tags:
@@ -1096,34 +1174,32 @@ components:
             type: string
         priority:
           $ref: '#/components/schemas/Priority'
-        updatesCount:
-          type: integer
-      required: [ id, title, parentProjectId, description, assignee, lastUpdate, status, updatesCount ]
+      required: [ id, title, parentProjectId, description, assignee, status ]
     UserStoryCreationRequest:
       type: object
       properties:
         title:
           type: string
-          minLength: 3
-          maxLength: 140
+          minLength: 4
+          maxLength: 80
         description:
           type: string
           minLength: 0
-          maxLength: 2000
+          maxLength: 4000
         assignee:
           type: string
-          format: uuid
+          x-@type: '@id'
         points:
           type: number
-          minimum: 0.5
-          maximum: 40
+          minimum: 0
+          maximum: 120
         status:
           $ref: '#/components/schemas/TaskStatusFreeToMove'
         tags:
           type: array
           items:
             type: string
-          maxItems: 6
+          maxItems: 10
         priority:
           $ref: '#/components/schemas/Priority'
       required: [ title, assignee, points ]
@@ -1132,26 +1208,26 @@ components:
       properties:
         title:
           type: string
-          minLength: 3
-          maxLength: 140
+          minLength: 4
+          maxLength: 80
         description:
           type: string
           minLength: 0
-          maxLength: 2000
+          maxLength: 4000
         assignee:
           type: string
-          format: uuid
+          x-@type: '@id'
         points:
           type: number
-          minimum: 0.5
-          maximum: 40
+          minimum: 0
+          maximum: 120
         status:
           $ref: '#/components/schemas/TaskStatusFreeToMove'
         tags:
           type: array
           items:
             type: string
-          maxItems: 6
+          maxItems: 10
         priority:
           $ref: '#/components/schemas/Priority'
     UserStory:
@@ -1168,18 +1244,12 @@ components:
           type: number
         parentProjectId:
           type: string
-          format: uuid
+          x-@type: '@id'
         description:
           type: string
         assignee:
           type: string
-          format: uuid
-        creationDate:
-          type: string
-          format: date
-        lastUpdate:
-          type: string
-          format: date
+          x-@type: '@id'
         status:
           $ref: '#/components/schemas/TaskStatus'
         tags:
@@ -1188,9 +1258,7 @@ components:
             type: string
         priority:
           $ref: '#/components/schemas/Priority'
-        updatesCount:
-          type: integer
-      required: [ id, title, points, parentProjectId, description, assignee, lastUpdate, status, updatesCount ]
+      required: [ id, title, points, parentProjectId, description, assignee, status ]
     Task:
       oneOf:
         - $ref: '#/components/schemas/TechnicalStory'
@@ -1216,6 +1284,26 @@ components:
       enum: 
         - Product Owner
         - Developer
+    Analytics:
+      type: object
+      properties:
+        resourceId:
+          type: string
+          x-@type: '@id'
+        createdOn:
+          type: string
+          format: date
+        lastUpdatedOn:
+          type: string
+          format: date
+        updatesCount:
+          type: integer
+          format: int32
+      required:
+        - createdOn
+        - lastUpdatedOn
+        - updatesCount
+        - resourceId
     Error:
       type: object
       properties:
@@ -1239,7 +1327,7 @@ components:
                 # x-@id would be userEmail
                 x-@type: schema:email
           minItems: 1
-          maxItems: 10
+          maxItems: 5
 # json-LD context
 x-@context:
   x-@context: '@context'
@@ -1261,6 +1349,7 @@ x-@context:
   role:
     x-@id: vnd_jeera:role
     x-@type: vnd_jeera:UserRole
+  starredProjects: vnd_jeera:starredProjects
   CreateUserRequest: vnd_jeera:CreateUserRequest
   Project: schema:Project
   CreateProjectRequest: vnd_jeera:CreateProjectRequest
@@ -1303,7 +1392,8 @@ x-@context:
   title: schema:name
   name: schema:name
   description: schema:description
-  creationDate: schema:dateCreated
+  Analytics: vnd_jeera:Analytics
+  createdOn: schema:dateCreated
   lastUpdatedOn: schema:dateModified
   lastUpdate: schema:dateModified
   updatesCount: vnd_jeera:updatesCount

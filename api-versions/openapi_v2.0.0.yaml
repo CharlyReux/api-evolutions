@@ -1027,7 +1027,7 @@ components:
           format: uuid
         status:
           $ref: '#/components/schemas/TaskStatusFreeToMove'
-      required: [ name, assignee ]
+      required: [ title, assignee ]
     TechnicalStoryUpdateRequest:
       type: object
       properties:

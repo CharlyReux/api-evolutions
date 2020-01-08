@@ -1040,7 +1040,7 @@ components:
           maxItems: 10
         priority:
           $ref: '#/components/schemas/Priority'
-      required: [ name, assignee ]
+      required: [ title, assignee ]
     TechnicalStoryUpdateRequest:
       type: object
       properties:
