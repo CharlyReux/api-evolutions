@@ -1,0 +1,1437 @@
+openapi: "3.0.0"
+info:
+  version: 10.0.0
+  title: Jeera Project Manager
+  license:
+    name: MIT
+  contact:
+    name: Antoine Cheron
+    url: https://antoinecheron.github.io
+    email: antoine.cheron@irisa.fr
+servers:
+  - url: http://localhost:3000/
+paths:
+  /users:
+    post:
+      summary: Creates a new user (admin only)
+      operationId: createUser
+      x-@id: schema:RegisterAction
+      tags:
+        - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User just created
+          headers:
+            Location:
+              description: 'URL to the resource created'
+              schema:
+                x-@type: '@id'
+                type: string
+                format: url
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+          links:
+            confirmEmail:
+              x-@relation: 
+                - lcy:next
+                - vnd_jeera:rel/confirmEmail
+              operationId: confirmEmail
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /users/confirm: # to remove in v2
+    get:
+      summary: Confirm email ownership
+      operationId: confirmEmail
+      x-@id: vnd_jeera:confirmEmail
+      tags: 
+        - users
+      parameters:
+        - name: token
+          x-@id: vnd_jeera:emailConfirmationToken
+          in: path
+          description: Confirmation token received by email
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Success
+          links:
+            login:
+              operationId: login
+              x-@relation: vnd_jeera:rel/login
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/login:
+    post:
+      summary: Login into the application
+      operationId: login
+      x-@type: vnd_jeera:login
+      tags:
+        - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful connection
+          headers:
+            Authorization:
+              description: Token to use
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginConfirmation'
+          links:
+            logout:
+              operationId: logout
+              x-@relation: vnd_jeera:rel/logout
+            getUserDetails:
+              operationId: getUserDetails
+              x-@relation: vnd_jeera:rel/detail
+            listProjects:
+              operationId: listProjects
+              x-@relation: vnd_jeera:rel/listProjects
+        '403':
+          description: 'Wrong credentials'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/logout:
+    post:
+      summary: Logout
+      operationId: logout
+      x-@id: vnd_jeera:logout
+      tags: 
+        - users
+      responses:
+        '204':
+          description: 'Successfully logged out - revoke token'
+        '500':
+          description: 'Unexpected internal server error, try again'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /user:
+    get:
+      summary: Get a user details
+      operationId: getCurrentUserDetails
+      x-@id: vnd_jeera:getCurrentUserDetails
+      tags:
+        - users
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+          links:
+            listProjects:
+              operationId: listProjects
+              x-@relation: vnd_jeera:rel/listProjects
+            changePassword:
+              operationId: updateUserPassword
+              x-@relation: vnd_jeera:rel/changePassword
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /user/{userId}:
+    parameters: 
+      - $ref: '#/components/parameters/userId'
+    get:
+      summary: Get a user details
+      operationId: getUserDetails
+      x-@id: vnd_jeera:getUserDetails
+      tags:
+        - users
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetails'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /user/password:
+    parameters: 
+      - $ref: '#/components/parameters/userId'
+    put:
+      summary: Updates a user's password
+      operationId: updateUserPassword
+      x-@id: vnd_jeera:updateUserPassword
+      tags:
+        - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordRequest'
+      responses:
+        '204':
+          description: 'Password successfully updated'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /projects:
+    get:
+      summary: List the projects that the connected user can see
+      operationId: listProjects
+      x-@id: vnd_jeera:listProjects
+      tags:
+        - projects
+      parameters:
+        - name: offset
+          x-@id: hydra:offset
+          in: query
+          description: The number of items to skip before starting to collect the result set
+          required: false
+          schema:
+            type: integer
+            format: int8
+            minimum: 0
+            default: 0
+        - name: limit
+          x-@id: hydra:limit
+          in: query
+          description: Number of elements to get
+          required: false
+          schema:
+            type: integer
+            format: int8
+            minimum: 1
+            maximum: 40
+            default: 5
+      responses:
+        '200':
+          description: 'Success'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectsList'
+          links:
+            createProject:
+              operationId: createProject
+              x-@relation: vnd_jeera:rel/create
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+    post:
+      summary: Creates a project
+      operationId: createProject
+      x-@id: vnd_jeera:createProject
+      tags:
+        - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/projectDetails'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /project/{projectId}:
+    parameters: 
+        - $ref: '#/components/parameters/projectId'
+    get:
+      summary: Get the detail of a project
+      operationId: getProjectDetails
+      x-@id: vnd_jeera:getProjectDetails
+      tags:
+        - projects
+      responses:
+        '200':
+          $ref: '#/components/responses/projectDetails'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+    delete:
+      summary: Delete a project (only if archived)
+      operationId: deleteProject
+      x-@id: vnd_jeera:deleteProject
+      tags:
+        - projects
+      responses:
+        '204':
+          description: Success
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /task/{taskId}:
+    parameters:
+      - $ref: '#/components/parameters/taskId'
+    get:
+      summary: Get the detail of a task
+      operationId: getTaskDetails
+      x-@id: vnd_jeera:getTaskDetails
+      tags:
+        - tasks
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          links:
+            update:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                parentProjectId: '$response.body#/parentProjectId'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+            delete:
+              operationId: deleteTask
+              x-@relation: vnd_jeera:rel/delete
+              parameters:
+                taskId: '$response.body#/id'
+            moveToQA:
+              operationId: toQATask
+              x-@relation: vnd_jeera:rel/toQATask
+              parameters:
+                taskId: '$response.body#/id'
+            complete:
+              operationId: completeTask
+              x-@relation: vnd_jeera:rel/completeTask
+              parameters:
+                taskId: '$response.body#/id'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete a task (only if archived)
+      operationId: deleteTask
+      x-@id: vnd_jeera:deleteTask
+      tags:
+        - tasks
+      responses:
+        '204':
+          description: Success
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+    put:
+      summary: Update some fields of the task
+      operationId: updateTask
+      x-@id: vnd_jeera:updateTask
+      tags:
+        - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/TechnicalStoryUpdateRequest'
+                - $ref: '#/components/schemas/UserStoryUpdateRequest'
+      responses:
+        '200':
+          description: Update successfully done
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          links:
+            update:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                parentProjectId: '$response.body#/parentProjectId'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+            delete:
+              operationId: deleteTask
+              x-@relation: vnd_jeera:rel/delete
+              parameters:
+                taskId: '$response.body#/id'
+            moveToQA:
+              operationId: toQATask
+              x-@relation: vnd_jeera:rel/toQATask
+              parameters:
+                taskId: '$response.body#/id'
+            complete:
+              operationId: completeTask
+              x-@relation: vnd_jeera:rel/completeTask
+              parameters:
+                taskId: '$response.body#/id'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /task/{taskId}/archive:
+    post:
+      description: Reverse the archived status of a task
+      operationId: reverseTaskArchivedState
+      x-@id: vnd_jeera:reverseTaskArchivedState
+      tags:
+        - tasks
+      parameters: 
+        - name: taskId
+          x-@id: vnd_jeera:taskId
+          in: path
+          description: Id of the task to archive
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isArchived:
+                    type: boolean
+                    x-@id: 
+                required: [ isArchived ]
+          links:
+            update:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                parentProjectId: '$response.body#/parentProjectId'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+            delete:
+              operationId: deleteTask
+              x-@relation: vnd_jeera:rel/delete
+              parameters:
+                taskId: '$response.body#/id'
+            moveToQA:
+              operationId: toQATask
+              x-@relation: vnd_jeera:rel/toQATask
+              parameters:
+                taskId: '$response.body#/id'
+            complete:
+              operationId: completeTask
+              x-@relation: vnd_jeera:rel/completeTask
+              parameters:
+                taskId: '$response.body#/id'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /project/{projectId}/star:
+    post:
+      description: Reverse starred status of a project
+      operationId: starProject
+      x-@id: vnd_jeera:starProjectReverse
+      parameters: 
+        - $ref: '#/components/parameters/projectId'
+      tags:
+        - projects
+      responses:
+        '204':
+          description: Success
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /project/{projectId}/addCollaborator:
+    post:
+      description: Invite users to the project
+      operationId: inviteUsersToProject
+      x-@id: vnd_jeera:inviteUsersToProject
+      parameters: 
+        - $ref: '#/components/parameters/projectId'
+      tags:
+        - projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteUsersToProjectRequest'
+      responses:
+        '204':
+          description: Success
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /project/{projectId}/archive:
+    post:
+      description: Archive a project
+      operationId: revertProjectArchiveState
+      x-@id: vnd_jeera:revertProjectArchiveState
+      tags:
+        - projects
+      parameters: 
+        - $ref: '#/components/parameters/projectId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isArchived:
+                    type: boolean
+                    x-@id: 
+                required: [ isArchived ]
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /tasks:
+    get:
+      summary: List user tasks
+      operationId: listTasks
+      x-@id: vnd_jeera:listTasks
+      tags:
+        - tasks
+      parameters:
+        - $ref: '#/components/parameters/queryProjectId'
+        - name: createdBefore
+          in: query
+          x-@id: vnd_jeera:createdBefore
+          description: Minimum date of tasks to list
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: offset
+          in: query
+          x-@id: hydra:offset
+          description: The number of items to skip before starting to collect the result set
+          required: false
+          schema:
+            type: integer
+            format: int8
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          x-@id: hydra:limit
+          description: Number of elements to get
+          required: false
+          schema:
+            type: integer
+            format: int8
+            minimum: 1
+            maximum: 40
+            default: 10
+      responses:
+        '200':
+          description: Success - list of tasks
+          headers:
+            Link:
+              description: 'Contextually relevant links - provided links all have a rel attribute as recommended here: https://www.w3.org/wiki/LinkHeader'
+              schema:
+                type: string
+                format: link-http-header
+                # TODO find semantics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksList'
+          links:
+            create:
+              operationId: createTask
+              x-@relation: vng_jeera:rel/create
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /tasks/technicalStory:
+    post:
+      summary: Creates a technical story
+      operationId: createTechnicalStory
+      x-@id: vnd_jeera:createTechnicalStory
+      tags:
+        - tasks
+      requestBody:
+        description: Technical story to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnicalStoryCreationRequest'
+      responses:
+        '201':
+          description: Created technical story
+          headers:
+            Location:
+              description: 'URL to the resource created'
+              schema:
+                type: string
+                format: url
+                x-@type: '@id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnicalStory'
+          links:
+            update:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                parentProjectId: '$response.body#/parentProjectId'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+            delete:
+              operationId: deleteTask
+              x-@relation: vnd_jeera:rel/delete
+              parameters:
+                taskId: '$response.body#/id'
+            moveToQA:
+              operationId: toQATask
+              x-@relation: vnd_jeera:rel/toQATask
+              parameters:
+                taskId: '$response.body#/id'
+            complete:
+              operationId: completeTask
+              x-@relation: vnd_jeera:rel/completeTask
+              parameters:
+                taskId: '$response.body#/id'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /tasks/userStory:
+    post:
+      summary: Creates a user story
+      operationId: createUserStory
+      x-@id: vnd_jeera:createUserStory
+      tags:
+        - tasks
+      requestBody:
+        description: User story to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserStoryCreationRequest'
+      responses:
+        '201':
+          description: Created user story
+          headers:
+            Location:
+              description: 'URL to the resource created'
+              schema:
+                type: string
+                format: url
+                x-@type: '@id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStory'
+          links:
+            update:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                parentProjectId: '$response.body#/parentProjectId'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+            delete:
+              operationId: deleteTask
+              x-@relation: vnd_jeera:rel/delete
+              parameters:
+                taskId: '$response.body#/id'
+            moveToQA:
+              operationId: toQATask
+              x-@relation: vnd_jeera:rel/toQATask
+              parameters:
+                taskId: '$response.body#/id'
+            complete:
+              operationId: completeTask
+              x-@relation: vnd_jeera:rel/completeTask
+              parameters:
+                taskId: '$response.body#/id'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              parameters:
+                resourceId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /task/{taskId}/toQa:
+    parameters:
+      - $ref: '#/components/parameters/taskId'
+    put:
+      description: Place the task in QA status
+      operationId: toQATask
+      x-@id: vnd_jeera:toQATask
+      tags:
+        - tasks
+      responses:
+        '204':
+          description: Success
+          links:
+            modify:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                parentProjectId: '$response.body#/parentProjectId'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+            complete:
+              operationId: completeTask
+              x-@relation: vnd_jeera:rel/completeTask
+              parameters:
+                taskId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /task/{taskId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/taskId'
+    put:
+      description: Place the task in done status
+      operationId: toDoneTask
+      x-@id: vnd_jeera:completeTask
+      tags:
+        - tasks
+      responses:
+        '204':
+          description: Success
+          links:
+            modify:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                parentProjectId: '$response.body#/parentProjectId'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            moveToQA:
+              operationId: toQATask
+              x-@relation: vnd_jeera:rel/toQATask
+              parameters:
+                taskId: '$response.body#/id'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /analytics/{resourceId}:
+    parameters:
+      - $ref: '#/components/parameters/resourceId'
+    get:
+      description: Get analytics on a resource
+      operationId: getAnalytics
+      x-@id: vnd_jeera:getAnalytics
+      tags:
+        - analytics
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analytics'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+
+
+components:
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    userId: 
+      name: userId
+      x-@id: vnd_jeera:userId
+      in: path
+      description: Id of the user to retrieve details for
+      required: true
+      schema:
+        type: string
+        format: url
+    taskId:
+      name: taskId
+      in: path
+      x-@id: vnd_jeera:taskId
+      description: Id of the task to retrieve details for
+      required: true
+      schema:
+        type: string
+        format: url
+    projectId:
+      name: projectId
+      in: path
+      x-@id: vnd_jeera:projectId
+      description: Id of the project to retrieve details for
+      required: true
+      schema:
+        type: string
+        format: url
+    queryProjectId:
+      name: projectId
+      in: query
+      x-@id: vnd_jeera:projectId
+      description: Id of the project to retrieve details for
+      required: true
+      schema:
+        type: string
+        format: url
+    resourceId:
+      name: resourceId
+      x-@id: vnd_jeera:appResourceId
+      in: path
+      description: Id of any resource hold by the server
+      required: true
+      schema:
+        type: string
+        format: url
+  responses:
+    projectDetails:
+      description: Project details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Project'
+      links:
+        inviteUser:
+          operationId: inviteUsersToProject
+          x-@relation: vnd_jeera:rel/inviteToCollaborate
+          parameters:
+            projectId: '$response.body#/projectId'
+        createTask:
+          operationId: createTask
+          x-@relation: vnd_jeera:rel/create
+          parameters:
+            parentProjectId: '$response.body#/id'
+        listTasks:
+          operationId: listTasks
+          x-@relation: vnd_jeera:rel/listProjectTasks
+          parameters:
+            parentProjectId: '$response.body#/id'
+        reverseArchivedState:
+          operationId: revertProjectArchiveState
+          x-@relation: vnd_jeera:rel/archive
+          parameters:
+            projectId: '$response.body#/id'
+        delete:
+          operationId: deleteProject
+          x-@relation: vnd_jeera:rel/delete
+          parameters:
+            projectId: '$response.body#/id'
+        star:
+          operationId: starProject
+          x-@relation: vnd_jeera:rel/starProject
+          parameters:
+            projectId: '$response.body#/id'
+        analytics:
+          operationId: getAnalytics
+          x-@relation: vnd_jeera:rel/analytics
+          parameters:
+            resourceId: '$response.body#/id'
+  schemas:
+    CreateUserRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+    UserDetails:
+      type: object
+      properties:
+        username:
+          type: string
+        id:
+          type: string
+          format: url
+          x-@id: vnd_jeera:userId
+          x-@type: '@id'
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+        starredProjects:
+          type: array
+          items:
+            type: string
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required: [ 'username', 'password' ]
+    LoginConfirmation:
+      type: object
+      properties:
+        token:
+          type: string
+          x-@id: vnd_jeera:JWT
+    UpdatePasswordRequest:
+      type: object
+      properties:
+        previousPassword:
+          type: string
+        newPassword:
+          type: string
+      required: [ previousPassword, newPassword ]
+    CreateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [ name ]
+    ProjectsList:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+    Project:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: url
+          x-@id: vnd_jeera:projectId
+          x-@type: '@id'
+        isArchived:
+          type: boolean
+        collaborators:
+          type: array
+          items:
+            type: string
+            format: url
+      required: [ name, id, isArchived, collaborators ]
+    TasksList:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+    TechnicalStoryCreationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 4
+          maxLength: 80
+        description:
+          type: string
+          minLength: 0
+          maxLength: 4000
+        assignee:
+          type: string
+          format: url
+        status:
+          $ref: '#/components/schemas/TaskStatusFreeToMove'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        priority:
+          $ref: '#/components/schemas/Priority'
+      required: [ title, assignee ]
+    TechnicalStoryUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 4
+          maxLength: 80
+        description:
+          type: string
+          minLength: 0
+          maxLength: 4000
+        assignee:
+          type: string
+          format: url
+        status:
+          $ref: '#/components/schemas/TaskStatusFreeToMove'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 6
+        priority:
+          $ref: '#/components/schemas/Priority'
+    TechnicalStory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: url
+          x-@id: vnd_jeera:taskId
+          x-@type: '@id'
+        title:
+          type: string
+        parentProjectId:
+          type: string
+          format: url
+        details:
+          $ref: '#/components/schemas/TaskDetails'
+      required: [ id, title, parentProjectId, details ]
+    UserStoryCreationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 4
+          maxLength: 80
+        description:
+          type: string
+          minLength: 0
+          maxLength: 4000
+        assignee:
+          type: string
+          format: url
+        points:
+          type: number
+          minimum: 0
+          maximum: 120
+        status:
+          $ref: '#/components/schemas/TaskStatusFreeToMove'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        priority:
+          $ref: '#/components/schemas/Priority'
+      required: [ title, assignee, points ]
+    UserStoryUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 4
+          maxLength: 80
+        description:
+          type: string
+          minLength: 0
+          maxLength: 4000
+        assignee:
+          type: string
+          format: url
+        points:
+          type: number
+          minimum: 0
+          maximum: 120
+        status:
+          $ref: '#/components/schemas/TaskStatusFreeToMove'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        priority:
+          $ref: '#/components/schemas/Priority'
+    UserStory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: url
+          x-@id: vnd_jeera:taskId
+          x-@type: '@id'
+        title:
+          type: string
+        points:
+          type: number
+        parentProjectId:
+          type: string
+          format: url
+        details:
+          $ref: '#/components/schemas/TaskDetails'
+      required: [ id, title, points, parentProjectId, details ]
+    Task:
+      oneOf:
+        - $ref: '#/components/schemas/TechnicalStory'
+        - $ref: '#/components/schemas/UserStory'
+    TaskStatus:
+      type: string
+      enum: [ 'todo', 'in progress', 'review', 'QA', 'done' ]
+    TaskStatusFreeToMove:
+      type: string
+      enum: [ 'todo', 'in progress', 'review' ]
+    Priority:
+      type: string
+      enum:
+        - blocking
+        - critical
+        - important
+        - high
+        - medium
+        - low
+        - simple
+    TaskDetails:
+      type: object
+      properties:
+        description:
+          type: string
+        assignee:
+          type: string
+          format: url
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        tags:
+          type: array
+          items:
+            type: string
+        priority:
+          $ref: '#/components/schemas/Priority'
+        isArchived:
+          type: boolean
+    UserRole:
+      type: string
+      enum: 
+        - Product Owner
+        - Developer
+    Analytics:
+      type: object
+      properties:
+        createdOn:
+          type: string
+          format: date
+        lastUpdatedOn:
+          type: string
+          format: date
+        updatesCount:
+          type: integer
+          format: int32
+      required:
+        - createdOn
+        - lastUpdatedOn
+        - updatesCount
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          x-@id: schema:identifier
+        description:
+          type: string
+    InviteUsersToProjectRequest:
+      type: object
+      properties:
+        users:
+          type: array
+          x-@id: vnd_jeera:projectUsers
+          # x-@type: schema:ItemList
+          items:
+            oneOf:
+              - type: string
+                format: url
+                x-@type: '@id'
+              - type: string
+                format: email
+                # x-@id would be userEmail
+                x-@type: schema:email
+          minItems: 1
+          maxItems: 5
+# json-LD context
+x-@context:
+  x-@context: '@context'
+  x-@id: '@id'
+  x-@type: '@type'
+  x-@relation: 'dce:relation'
+  schema: 'https://schema.org/'
+  lcy: 'http://purl.org/vocab/lifecycle/schema#'
+  dce: 'http://purl.org/dc/elements/1.1/'
+  meb: 'http://rdf.myexperiment.org/ontologies/base/'
+  ov: 'http://open.vocab.org/terms/'
+  mo: 'http://purl.org/ontology/mo/'
+  vnd_jeera: 'https://github.com/loosely-coupled-API/jeera_vocabulary/blob/master/vocab.ttl#'
+  LoginConfirmation: vnd_jeera:LoginConfirmation
+  username: meb:username
+  password: ov:passwd
+  email: schema:email
+  role:
+    x-@id: vnd_jeera:role
+    x-@type: vnd_jeera:UserRole
+  starredProjects: vnd_jeera:starredProjects
+  CreateUserRequest: vnd_jeera:CreateUserRequest
+  Project: schema:Project
+  CreateProjectRequest: vnd_jeera:CreateProjectRequest
+  UpdatePasswordRequest: vnd_jeera:UpdatePasswordRequest
+  previousPassword: vnd_jeera:previousPassword
+  newPassword: vnd_jeera:newPassword
+  ProjectsList: vnd_jeera:ProjectsList
+  UserStory: vnd_jeera:UserStory
+  UserStoryUpdateRequest: vnd_jeera:UserStoryUpdateRequest
+  UserStoryCreationRequest: vnd_jeera:UserStoryCreationRequest
+  TechnicalStory: vnd_jeera:TechnicalStory
+  TechnicalStoryCreationRequest: vnd_jeera:TechnicalStoryCreationRequest
+  TechnicalStoryUpdateRequest: vnd_jeera:TechnicalStoryUpdateRequest
+  points: vnd_jeera:points
+  projectId: 
+    x-@id: vnd_jeera:projectId
+    x-@type: '@id'
+  parentProjectId: 
+    x-@id: vnd_jeera:projectId
+    x-@type: '@id'
+  taskId: 
+    x-@id: vnd_jeera:taskId
+    x-@type: '@id'
+  TaskDetails: vnd_jeera:TaskDetails
+  details: 
+    x-@id: vnd_jeera:Task/details
+    x-@type: TaskDetails
+  assignee: vnd_jeera:assignee
+  Task: vnd_jeera:Task
+  TaskStatus: vnd_jeera:TaskStatus
+  TasksList: vnd_jeera:TasksList
+  status: 
+    x-@id: vnd_jeera:status
+  TaskStatusFreeToMove: vnd_jeera:TaskStatusFreeToMove
+  tags: vnd_jeera:tags
+  priority: 
+    x-@id: vnd_jeera:priority
+    x-@type: Priority
+  Priority: vnd_jeera:Priority
+  isArchived: vnd_jeera:isArchived
+  title: schema:name
+  description: schema:description
+  Analytics: vnd_jeera:Analytics
+  createdOn: schema:dateCreated
+  creationDate: schema:dateCreated
+  lastUpdatedOn: schema:dateModified
+  lastUpdate: schema:dateModified
+  updatesCount: vnd_jeera:updatesCount
+  UserRole: vnd_jeera:UserRole
+  Error: schema:error
+  EmailConfirmation:
+    x-@id: vnd_jeera:EmailOwnershipConfirmation
