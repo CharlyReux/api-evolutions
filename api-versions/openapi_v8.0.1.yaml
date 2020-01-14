@@ -1,6 +1,6 @@
 openapi: "3.0.0"
 info:
-  version: 8.0.0
+  version: 8.0.1
   title: Jeera Project Manager
   license:
     name: MIT
@@ -248,7 +248,7 @@ paths:
             format: int8
             minimum: 1
             maximum: 40
-            default: 3
+            default: 5
       responses:
         '200':
           description: 'Success'
