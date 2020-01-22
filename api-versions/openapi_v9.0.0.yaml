@@ -1435,7 +1435,11 @@ x-@context:
   taskId: 
     x-@id: vnd_jeera:taskId
     x-@type: '@id'
-  assignee: vnd_jeera:assignee
+  userId: vnd_jeera:userId
+  resourceId: vnd_jeera:appResourceId
+  assignee: 
+    x-@id: vnd_jeera:assignee
+    x-@type: vnd_jeera:userId
   Task: vnd_jeera:Task
   TaskStatus: vnd_jeera:TaskStatus
   TasksList: vnd_jeera:TasksList
