@@ -1,6 +1,6 @@
 openapi: "3.0.0"
 info:
-  version: 7.2.0
+  version: 9.2.0
   title: Jeera Project Manager
   license:
     name: MIT
@@ -12,6 +12,21 @@ servers:
   - url: http://localhost:3000/
 paths:
   /users:
+    get:
+      summary: List existing users public information
+      operationId: listUsers
+      x-@id: vnd_jeera:listUsers
+      tags:
+        - users
+      responses:
+        '200':
+          description: All existing users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailsList'
+      security: 
+        - bearerToken: []
     post:
       summary: Creates a new user (admin only)
       operationId: createUser
@@ -158,6 +173,7 @@ paths:
             listProjects:
               operationId: listProjects
               x-@relation: vnd_jeera:rel/listProjects
+              x-affiliation: parent
             changePassword:
               operationId: updateUserPassword
               x-@relation: vnd_jeera:rel/changePassword
@@ -223,6 +239,8 @@ paths:
       summary: List the projects that the connected user can see
       operationId: listProjects
       x-@id: vnd_jeera:listProjects
+      security:
+        - bearerToken: []
       tags:
         - projects
       parameters:
@@ -246,18 +264,16 @@ paths:
             format: int8
             minimum: 1
             maximum: 40
-            default: 3
-        - name: public
-          in: query
-          x-@id: vnd_jeera:public
-          description: Should the listed projects be public - listing private projects requires to be logged in
-          required: false
-          schema:
-            type: boolean
-            default: false
+            default: 5
       responses:
         '200':
           description: 'Success'
+          headers:
+            Link:
+              description: 'Contextually relevant links - provided links all have a rel attribute as recommended here: https://www.w3.org/wiki/LinkHeader'
+              schema:
+                type: string
+                format: link-http-header
           content:
             application/json:
               schema:
@@ -266,6 +282,7 @@ paths:
             createProject:
               operationId: createProject
               x-@relation: vnd_jeera:rel/create
+              x-affiliation: parent
         default:
           description: unexpected error
           content:
@@ -351,6 +368,7 @@ paths:
             update:
               operationId: updateTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 id: '$response.body#/id'
@@ -361,24 +379,33 @@ paths:
                 status: '$response.body#/status'
                 tags: '$response.body#/tags'
                 priority: '$response.body#/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
             delete:
               operationId: deleteTask
               x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             analytics:
               operationId: getAnalytics
               x-@relation: vnd_jeera:rel/analytics
+              x-affiliation: parent
               parameters:
                 resourceId: '$response.body#/id'
         default:
@@ -428,6 +455,7 @@ paths:
             update:
               operationId: updateTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 id: '$response.body#/id'
@@ -438,6 +466,89 @@ paths:
                 status: '$response.body#/status'
                 tags: '$response.body#/tags'
                 priority: '$response.body#/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
+            delete:
+              operationId: deleteTask
+              x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
+              parameters:
+                taskId: '$response.body#/id'
+            moveToQA:
+              operationId: toQATask
+              x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
+              parameters:
+                taskId: '$response.body#/id'
+            complete:
+              operationId: toDoneTask
+              x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
+              parameters:
+                taskId: '$response.body#/id'
+            analytics:
+              operationId: getAnalytics
+              x-@relation: vnd_jeera:rel/analytics
+              x-affiliation: parent
+              parameters:
+                resourceId: '$response.body#/id'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security: 
+        - bearerToken: []
+  /task/{taskId}/archive:
+    post:
+      description: Reverse the archived status of a task
+      operationId: reverseTaskArchivedState
+      x-@id: vnd_jeera:reverseTaskArchivedState
+      tags:
+        - tasks
+      parameters: 
+        - name: taskId
+          x-@id: vnd_jeera:taskId
+          in: path
+          description: Id of the task to archive
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isArchived:
+                    type: boolean
+                    x-@id: 
+                required: [ isArchived ]
+          links:
+            update:
+              operationId: updateTask
+              x-@relation: vnd_jeera:rel/modify
+              parameters:
+                taskId: '$response.body#/id'
+                id: '$response.body#/id'
+                title: '$response.body#/title'
+                description: '$response.body#/details/description'
+                assignee: '$response.body#/details/assignee'
+                points: '$response.body#/points'
+                status: '$response.body#/details/status'
+                tags: '$response.body#/details/tags'
+                priority: '$response.body#/details/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
             delete:
               operationId: deleteTask
               x-@relation: vnd_jeera:rel/delete
@@ -449,7 +560,7 @@ paths:
               parameters:
                 taskId: '$response.body#/id'
             complete:
-              operationId: toDoneTask
+              operationId: completeTask
               x-@relation: vnd_jeera:rel/completeTask
               parameters:
                 taskId: '$response.body#/id'
@@ -511,39 +622,27 @@ paths:
                 $ref: "#/components/schemas/Error"
       security: 
         - bearerToken: []
-  # to merge with unarchive
   /project/{projectId}/archive:
-    put:
+    post:
       description: Archive a project
-      operationId: archiveProject
-      x-@id: vnd_jeera:archiveProject
+      operationId: revertProjectArchiveState
+      x-@id: vnd_jeera:revertProjectArchiveState
       tags:
         - projects
       parameters: 
         - $ref: '#/components/parameters/projectId'
       responses:
-        '204':
+        '200':
           description: Success
-        default:
-          description: unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-      security: 
-        - bearerToken: []
-  /project/{projectId}/unarchive:
-    put:
-      description: Unarchive a project
-      operationId: unarchiveProject
-      x-@id: vnd_jeera:unarchiveProject
-      tags:
-        - projects
-      parameters:
-        - $ref: '#/components/parameters/projectId'
-      responses:
-        '204':
-          description: Success
+                type: object
+                properties:
+                  isArchived:
+                    type: boolean
+                    x-@id: vnd_jeera:isArchived
+                required: [ isArchived ]
         default:
           description: unexpected error
           content:
@@ -607,9 +706,11 @@ paths:
             createTechnicalStory:
               operationId: createTechnicalStory
               x-@relation: vnd_jeera:rel/create
+              x-affiliation: parent
             createUserStory:
               operationId: createUserStory
               x-@relation: vnd_jeera:rel/create
+              x-affiliation: parent
         default:
           description: unexpected error
           content:
@@ -649,6 +750,7 @@ paths:
             update:
               operationId: updateTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 id: '$response.body#/id'
@@ -659,24 +761,33 @@ paths:
                 status: '$response.body#/status'
                 tags: '$response.body#/tags'
                 priority: '$response.body#/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
             delete:
               operationId: deleteTask
               x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             analytics:
               operationId: getAnalytics
               x-@relation: vnd_jeera:rel/analytics
+              x-affiliation: parent
               parameters:
                 resourceId: '$response.body#/id'
         default:
@@ -718,6 +829,7 @@ paths:
             update:
               operationId: updateTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 id: '$response.body#/id'
@@ -728,24 +840,34 @@ paths:
                 status: '$response.body#/status'
                 tags: '$response.body#/tags'
                 priority: '$response.body#/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-affiliation: parent
+              parameters:
+                taskId: '$response.body#/id'
             delete:
               operationId: deleteTask
               x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
             analytics:
               operationId: getAnalytics
               x-@relation: vnd_jeera:rel/analytics
+              x-affiliation: parent
               parameters:
                 resourceId: '$response.body#/id'
         default:
@@ -772,6 +894,7 @@ paths:
             modify:
               operationId: updateTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 parentProjectId: '$response.body#/parentProjectId'
@@ -783,9 +906,15 @@ paths:
                 status: '$response.body#/status'
                 tags: '$response.body#/tags'
                 priority: '$response.body#/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
         default:
@@ -812,6 +941,7 @@ paths:
             modify:
               operationId: updateTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 parentProjectId: '$response.body#/parentProjectId'
@@ -823,9 +953,15 @@ paths:
                 status: '$response.body#/status'
                 tags: '$response.body#/tags'
                 priority: '$response.body#/priority'
+            reverseArchivedState:
+              operationId: reverseTaskArchivedState
+              x-@relation: vnd_jeera:refl/reverseArchivedState
+              parameters:
+                taskId: '$response.body#/id'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
         default:
@@ -858,6 +994,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+      security: 
+      - bearerToken: []
 
 
 components:
@@ -877,45 +1015,48 @@ components:
         inviteUser:
           operationId: inviteUsersToProject
           x-@relation: vnd_jeera:rel/inviteToCollaborate
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/projectId'
         createTechnicalStory:
           operationId: createTechnicalStory
           x-@relation: vnd_jeera:rel/create
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         createUserStory:
           operationId: createUserStory
           x-@relation: vnd_jeera:rel/create
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         listTasks:
           operationId: listTasks
           x-@relation: vnd_jeera:rel/listProjectTasks
+          x-affiliation: parent
           parameters:
             queryProjectId: '$response.body#/id'
-        archive:
-          operationId: archiveProject
+        reverseArchivedState:
+          operationId: revertProjectArchiveState
           x-@relation: vnd_jeera:rel/archive
-          parameters:
-            projectId: '$response.body#/id'
-        unarchive:
-          operationId: unarchiveProject
-          x-@relation: vnd_jeera:rel/unarchive
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         delete:
           operationId: deleteProject
           x-@relation: vnd_jeera:rel/delete
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         star:
           operationId: starProject
           x-@relation: vnd_jeera:rel/starProject
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         analytics:
           operationId: getAnalytics
+          x-affiliation: parent
           x-@relation: vnd_jeera:rel/analytics
           parameters:
             resourceId: '$response.body#/id'
@@ -1033,9 +1174,6 @@ components:
       properties:
         name:
           type: string
-        isPublic:
-          type: boolean
-          default: false
       required: [ name ]
     ProjectsList:
       type: object
@@ -1054,8 +1192,6 @@ components:
           format: uuid
           x-@id: vnd_jeera:projectId
           x-@type: 'mo:uuid'
-        isPublic:
-          type: boolean
         isArchived:
           type: boolean
         collaborators:
@@ -1063,7 +1199,7 @@ components:
           items:
             type: string
             x-@type: '@id'
-      required: [ name, id, isPublic, isArchived, collaborators ]
+      required: [ name, id, isArchived, collaborators ]
     TasksList:
       type: object
       properties:
@@ -1147,7 +1283,9 @@ components:
             type: string
         priority:
           $ref: '#/components/schemas/Priority'
-      required: [ id, title, parentProjectId, description, assignee, status ]
+        isArchived:
+          type: boolean
+      required: [ id, title, parentProjectId, description, assignee, status, isArchived ]
     UserStoryCreationRequest:
       type: object
       properties:
@@ -1234,7 +1372,9 @@ components:
             type: string
         priority:
           $ref: '#/components/schemas/Priority'
-      required: [ id, title, points, parentProjectId, description, assignee, status ]
+        isArchived:
+          type: boolean
+      required: [ id, title, points, parentProjectId, description, assignee, status, isArchived ]
     Task:
       oneOf:
         - $ref: '#/components/schemas/TechnicalStory'
@@ -1318,6 +1458,7 @@ x-@context:
   meb: 'http://rdf.myexperiment.org/ontologies/base/'
   ov: 'http://open.vocab.org/terms/'
   mo: 'http://purl.org/ontology/mo/'
+  hydra: 'http://www.w3.org/ns/hydra/core#'
   vnd_jeera: 'https://github.com/loosely-coupled-API/jeera_vocabulary/blob/master/vocab.ttl#'
   LoginConfirmation: vnd_jeera:LoginConfirmation
   username: meb:username
@@ -1353,7 +1494,11 @@ x-@context:
   taskId: 
     x-@id: vnd_jeera:taskId
     x-@type: '@id'
-  assignee: vnd_jeera:assignee
+  userId: vnd_jeera:userId
+  resourceId: vnd_jeera:appResourceId
+  assignee: 
+    x-@id: vnd_jeera:assignee
+    x-@type: vnd_jeera:userId
   Task: vnd_jeera:Task
   TaskStatus: vnd_jeera:TaskStatus
   TasksList: vnd_jeera:TasksList

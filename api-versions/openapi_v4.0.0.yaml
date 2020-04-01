@@ -43,6 +43,7 @@ paths:
                 - lcy:next
                 - vnd_jeera:rel/confirmEmail
               operationId: confirmEmail
+              x-affiliation: parent
         default:
           description: unexpected error
           content:
@@ -158,6 +159,7 @@ paths:
             listProjects:
               operationId: listProjects
               x-@relation: vnd_jeera:rel/listProjects
+              x-affiliation: parent
             changePassword:
               operationId: updateUserPassword
               x-@relation: vnd_jeera:rel/changePassword
@@ -266,6 +268,7 @@ paths:
             createProject:
               operationId: createProject
               x-@relation: vnd_jeera:rel/create
+              x-affiliation: parent
         default:
           description: unexpected error
           content:
@@ -352,6 +355,7 @@ paths:
             update:
               operationId: updateProjectTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -366,18 +370,21 @@ paths:
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -428,6 +435,7 @@ paths:
             update:
               operationId: updateProjectTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -442,18 +450,21 @@ paths:
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/projectId'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/projectId'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/projectId'
@@ -596,11 +607,13 @@ paths:
             createTechnicalStory:
               operationId: createTechnicalStory
               x-@relation: vnd_jeera:rel/create
+              x-affiliation: parent
               parameters:
                 projectId: '$request.path.projectId'
             createUserStory:
               operationId: createUserStory
               x-@relation: vnd_jeera:rel/create
+              x-affiliation: parent
               parameters:
                 projectId: '$request.path.projectId'
         default:
@@ -644,6 +657,7 @@ paths:
             update:
               operationId: updateProjectTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -658,18 +672,21 @@ paths:
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -714,6 +731,7 @@ paths:
             update:
               operationId: updateProjectTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -728,18 +746,21 @@ paths:
             delete:
               operationId: deleteProjectTask
               x-@relation: vnd_jeera:rel/delete
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -768,6 +789,7 @@ paths:
             modify:
               operationId: updateProjectTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -782,6 +804,7 @@ paths:
             complete:
               operationId: toDoneTask
               x-@relation: vnd_jeera:rel/completeTask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -810,6 +833,7 @@ paths:
             modify:
               operationId: updateProjectTask
               x-@relation: vnd_jeera:rel/modify
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -824,6 +848,7 @@ paths:
             moveToQA:
               operationId: toQATask
               x-@relation: vnd_jeera:rel/toQATask
+              x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
                 projectId: '$response.body#/parentProjectId'
@@ -854,36 +879,43 @@ components:
         inviteUser:
           operationId: inviteUsersToProject
           x-@relation: vnd_jeera:rel/inviteToCollaborate
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/projectId'
         createTechnicalStory:
           operationId: createTechnicalStory
           x-@relation: vnd_jeera:rel/create
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         createUserStory:
           operationId: createUserStory
           x-@relation: vnd_jeera:rel/create
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         listTasks:
           operationId: listProjectTasks
           x-@relation: vnd_jeera:rel/listProjectTasks
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         archive:
           operationId: archiveProject
           x-@relation: vnd_jeera:rel/archive
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         unarchive:
           operationId: unarchiveProject
           x-@relation: vnd_jeera:rel/unarchive
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
         delete:
           operationId: deleteProject
           x-@relation: vnd_jeera:rel/delete
+          x-affiliation: parent
           parameters:
             projectId: '$response.body#/id'
   parameters:
