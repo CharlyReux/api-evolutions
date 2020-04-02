@@ -381,7 +381,7 @@ paths:
                 priority: '$response.body#/priority'
             reverseArchivedState:
               operationId: reverseTaskArchivedState
-              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-@relation: vnd_jeera:rel/reverseArchivedState
               parameters:
                 taskId: '$response.body#/id'
             delete:
@@ -468,7 +468,7 @@ paths:
                 priority: '$response.body#/priority'
             reverseArchivedState:
               operationId: reverseTaskArchivedState
-              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-@relation: vnd_jeera:rel/reverseArchivedState
               parameters:
                 taskId: '$response.body#/id'
             delete:
@@ -546,7 +546,7 @@ paths:
                 priority: '$response.body#/details/priority'
             reverseArchivedState:
               operationId: reverseTaskArchivedState
-              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-@relation: vnd_jeera:rel/reverseArchivedState
               parameters:
                 taskId: '$response.body#/id'
             delete:
@@ -763,7 +763,7 @@ paths:
                 priority: '$response.body#/priority'
             reverseArchivedState:
               operationId: reverseTaskArchivedState
-              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-@relation: vnd_jeera:rel/reverseArchivedState
               parameters:
                 taskId: '$response.body#/id'
             delete:
@@ -842,7 +842,7 @@ paths:
                 priority: '$response.body#/priority'
             reverseArchivedState:
               operationId: reverseTaskArchivedState
-              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-@relation: vnd_jeera:rel/reverseArchivedState
               x-affiliation: parent
               parameters:
                 taskId: '$response.body#/id'
@@ -908,7 +908,7 @@ paths:
                 priority: '$response.body#/priority'
             reverseArchivedState:
               operationId: reverseTaskArchivedState
-              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-@relation: vnd_jeera:rel/reverseArchivedState
               parameters:
                 taskId: '$response.body#/id'
             complete:
@@ -955,7 +955,7 @@ paths:
                 priority: '$response.body#/priority'
             reverseArchivedState:
               operationId: reverseTaskArchivedState
-              x-@relation: vnd_jeera:refl/reverseArchivedState
+              x-@relation: vnd_jeera:rel/reverseArchivedState
               parameters:
                 taskId: '$response.body#/id'
             moveToQA:
@@ -1123,6 +1123,10 @@ components:
           format: email
         role:
           $ref: '#/components/schemas/UserRole'
+    UserDetailsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/UserDetails'
     UserDetails:
       type: object
       properties:
